@@ -1,18 +1,8 @@
-# Terraform
+# terraform — 작성 예정
 
-## 핵심 개념
+이 섹션은 실습 진행 후 채워집니다.
 
-<!-- TODO: Provider / Resource / Data Source -->
-<!-- TODO: State 관리 (local vs remote backend) -->
-<!-- TODO: Module 구조 & 재사용 패턴 -->
-<!-- TODO: 변수(variable) & 출력(output) -->
-
-## 워크플로우
-
-<!-- TODO: init → plan → apply → destroy -->
-<!-- TODO: 환경 분리 전략 (workspace vs directory) -->
-
-## 디렉토리 구성
-
-- modules/ — 재사용 가능한 모듈
-- environments/ — dev/stg/prod 패턴
+## 구조 (예정)
+- 개념 정리
+- 템플릿 모음
+- 트러블슈팅 기록
