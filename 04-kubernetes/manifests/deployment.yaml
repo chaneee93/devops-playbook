@@ -1,0 +1,25 @@
+# 기본 Deployment 템플릿
+# TODO: 리소스 제한, 헬스체크 추가
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  labels:
+    app: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      containers:
+        - name: app
+          image: app:latest
+          ports:
+            - containerPort: 3000
+          # TODO: resources (requests/limits)
+          # TODO: livenessProbe / readinessProbe
