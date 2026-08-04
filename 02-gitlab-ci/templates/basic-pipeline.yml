@@ -1,0 +1,24 @@
+# 기본 3단계 파이프라인
+# TODO: 실제 프로젝트에 맞게 스크립트 수정
+
+stages:
+  - build
+  - test
+  - deploy
+
+build:
+  stage: build
+  script:
+    - echo "Building..."
+
+test:
+  stage: test
+  script:
+    - echo "Testing..."
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying..."
+  only:
+    - main
