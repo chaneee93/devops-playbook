@@ -1,0 +1,31 @@
+# 환경 변수 / 시크릿
+.env
+*.env
+secrets/
+*.pem
+*.key
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# 의존성
+node_modules/
+.gradle/
+target/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 로그
+*.log
