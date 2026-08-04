@@ -1,0 +1,25 @@
+# 캐시 적용 파이프라인
+# TODO: 언어별 캐시 경로 추가
+
+stages:
+  - build
+  - test
+
+variables:
+  NPM_CACHE: "$CI_PROJECT_DIR/.npm"
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+    - .npm/
+
+build:
+  stage: build
+  script:
+    - npm ci --cache $NPM_CACHE
+
+test:
+  stage: test
+  script:
+    - npm test
