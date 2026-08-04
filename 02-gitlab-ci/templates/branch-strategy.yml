@@ -1,0 +1,33 @@
+# 브랜치 분기 파이프라인
+# TODO: staging 환경 추가
+
+stages:
+  - build
+  - test
+  - deploy-dev
+  - deploy-prod
+
+build:
+  stage: build
+  script:
+    - echo "Build"
+
+test:
+  stage: test
+  script:
+    - echo "Test"
+
+deploy-dev:
+  stage: deploy-dev
+  script:
+    - echo "Deploy to dev"
+  only:
+    - develop
+
+deploy-prod:
+  stage: deploy-prod
+  script:
+    - echo "Deploy to production"
+  only:
+    - main
+  when: manual
