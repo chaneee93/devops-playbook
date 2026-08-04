@@ -1,0 +1,21 @@
+# App + DB 기본 구성
+# TODO: 볼륨, 네트워크 설정 상세화
+version: "3.8"
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=changeme
+
+volumes:
+  db-data:
