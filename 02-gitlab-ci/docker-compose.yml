@@ -1,0 +1,57 @@
+# ============================================================
+# GitLab Server + Runner 로컬 구축용 Docker Compose
+# ============================================================
+# 사용법:
+#   docker compose up -d
+#   (GitLab 첫 기동에 3~5분 소요)
+#
+# 접속:
+#   WSL 터미널        → http://localhost
+#   Windows 브라우저  → http://<wsl hostname -I 결과 IP>
+#
+# 최소 요구사항: RAM 8GB 이상 권장
+# ============================================================
+
+services:
+  # ── GitLab Server ─────────────────────────────────────────
+  # 코드 저장소 + CI 파이프라인을 "지시"하는 컨트롤 타워
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab
+    hostname: gitlab
+    restart: unless-stopped
+    ports:
+      - "80:80"        # 웹 UI
+      - "443:443"      # HTTPS
+      - "2222:22"      # Git SSH (22번은 호스트가 사용하므로 우회)
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://localhost'
+        gitlab_rails['initial_root_password'] = 'P@ssw0rd1234'
+        puma['workers'] = 2
+        sidekiq['concurrency'] = 5
+        prometheus_monitoring['enable'] = false
+        # ⚠️ grafana 설정은 최신 버전에서 제거됨 — 추가 시 컨테이너 무한 재시작
+    volumes:
+      - gitlab-config:/etc/gitlab
+      - gitlab-logs:/var/log/gitlab
+      - gitlab-data:/var/opt/gitlab
+    shm_size: '256m'
+
+  # ── GitLab Runner ─────────────────────────────────────────
+  # 실제로 빌드/테스트를 "실행"하는 일꾼
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: unless-stopped
+    volumes:
+      - runner-config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock   # ★ Docker-in-Docker
+    depends_on:
+      - gitlab
+
+volumes:
+  gitlab-config:
+  gitlab-logs:
+  gitlab-data:
+  runner-config:
