@@ -1,0 +1,14 @@
+# App + Redis 캐시 구성
+# TODO: Redis 클러스터 모드 샘플 추가
+version: "3.8"
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
