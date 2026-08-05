@@ -1,0 +1,44 @@
+# ============================================================
+# EKS Deployment — IRSA 포함
+# ============================================================
+# [CHANGE] 표시된 부분만 프로젝트에 맞게 변경
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-app                              # [CHANGE] 앱 이름
+  namespace: student16                         # [CHANGE] 네임스페이스
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notes-app                           # [CHANGE]
+  template:
+    metadata:
+      labels:
+        app: notes-app                         # [CHANGE]
+    spec:
+      serviceAccountName: notes-sa             # ★ IRSA — 이 SA에 연결된 IAM Role 사용
+      containers:
+        - name: notes-app                      # [CHANGE]
+          image: 834922934330.dkr.ecr.eu-west-3.amazonaws.com/notes-app:v1.0  # [CHANGE] ECR 이미지
+          ports:
+            - containerPort: 8080              # [CHANGE] 앱 포트
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          # [CHANGE] 헬스체크 (있으면 추가)
+          # livenessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: 8080
+          #   initialDelaySeconds: 10
+          # readinessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: 8080
+          #   initialDelaySeconds: 5

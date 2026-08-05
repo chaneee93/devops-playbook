@@ -1,0 +1,38 @@
+# ============================================================
+# 멀티스테이지 Dockerfile — Go 앱 예시
+# ============================================================
+# 빌드 도구를 최종 이미지에 남기지 않는다
+# 단일 스테이지: ~1.29GB → 멀티스테이지: ~7.7MB (40배 감소)
+# ============================================================
+
+# Stage 1: builder
+FROM golang:1.21 AS builder
+WORKDIR /app
+
+# [CHANGE] 의존성 먼저 (레이어 캐시 활용)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 소스는 마지막에 (자주 바뀌니까)
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o app main.go
+
+# Stage 2: runtime
+FROM alpine:latest
+# [CHANGE] distroless 쓰면 더 안전 (셸 없음)
+# FROM gcr.io/distroless/static-debian12
+
+COPY --from=builder /app/app /app
+EXPOSE 8080
+CMD ["/app"]
+
+# ============================================================
+# Java 버전:
+# FROM eclipse-temurin:21-jdk AS builder
+# COPY . .
+# RUN ./gradlew bootJar
+#
+# FROM eclipse-temurin:21-jre
+# COPY --from=builder build/libs/app.jar /app/app.jar
+# ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# ============================================================
