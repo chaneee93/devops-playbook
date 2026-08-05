@@ -14,9 +14,10 @@
 | [01. Docker](./01-docker/) | 이미지 빌드, 볼륨, Compose, 레지스트리 | 🚧 |
 | [02. GitLab CI](./02-gitlab-ci/) | 파이프라인 구축, Runner, artifacts/cache | ✅ |
 | [03. GitHub Actions](./03-github-actions/) | Actions 이식, OIDC, 보안 게이트 | ✅ |
-| [04. Terraform](./04-terraform/) | IaC, 모듈화, 환경 분리 | 🚧 |
-| [05. Kubernetes](./05-kubernetes/) | 클러스터 구성, 매니페스트 | 🚧 |
-| [06. AWS](./06-aws/) | 클라우드 인프라 설계 | 🚧 |
+| [04. 컨테이너 / EKS](./04-container-eks/) | 멀티스테이지, ECR, EKS, IRSA | ✅ |
+| [05. Terraform](./05-terraform/) | IaC, 모듈화, 환경 분리 | 🚧 |
+| [06. Kubernetes](./06-kubernetes/) | 클러스터 구성, 매니페스트 | 🚧 |
+| [07. AWS](./07-aws/) | 클라우드 인프라 설계 | 🚧 |
 
 ---
 
@@ -36,22 +37,27 @@
 ## 🚀 빠른 시작
 
 ### GitLab CI 템플릿
-```
-02-gitlab-ci/templates/
-├── 01-basic-pipeline.yml      # build → test → package 기본형
-├── 02-with-cache.yml          # 의존성 캐싱 적용
-├── 03-branch-strategy.yml     # 브랜치별 배포 분기
-└── 04-docker-build-push.yml   # Docker 이미지 빌드+푸시
-```
+
+    02-gitlab-ci/templates/
+    ├── 01-basic-pipeline.yml      # build → test → package 기본형
+    ├── 02-with-cache.yml          # 의존성 캐싱 적용
+    ├── 03-branch-strategy.yml     # 브랜치별 배포 분기
+    └── 04-docker-build-push.yml   # Docker 이미지 빌드+푸시
 
 ### GitHub Actions 템플릿
-```
-03-github-actions/templates/
-├── 01-basic-workflow.yml      # build → test → package 기본형
-├── 02-with-deploy.yml         # environment 승인 게이트
-├── 03-security-gate.yml       # 시크릿 스캔 + 취약점 스캔
-└── 04-oidc-aws.yml            # OIDC로 AWS 접근 (키 없이)
-```
+
+    03-github-actions/templates/
+    ├── 01-basic-workflow.yml      # build → test → package 기본형
+    ├── 02-with-deploy.yml         # environment 승인 게이트
+    ├── 03-security-gate.yml       # 시크릿 스캔 + 취약점 스캔
+    └── 04-oidc-aws.yml            # OIDC로 AWS 접근 (키 없이)
+
+### 컨테이너 / EKS 템플릿
+
+    04-container-eks/templates/
+    ├── Dockerfile.multi           # 멀티스테이지 빌드
+    ├── deployment.yaml            # EKS Deployment + IRSA
+    └── service.yaml               # ClusterIP Service
 
 ---
 
@@ -61,6 +67,7 @@
 |----------|------|
 | [notes-app-cicd](./projects/notes-app-cicd/) | GitLab Server+Runner를 Docker로 구축, CI 파이프라인 구현 |
 | [notes-app-actions](./projects/notes-app-actions/) | GitHub Actions로 이식, environment 승인 게이트 + 보안 스캔 |
+| [notes-app-eks](./projects/notes-app-eks/) | 멀티스테이지 빌드 → ECR push → EKS 배포 → IRSA |
 
 ---
 
@@ -70,6 +77,7 @@
 |------|------|
 | 2026-08 | GitLab CI 파이프라인 구축 (Runner 등록 → 파이프라인 → 브랜치 전략) |
 | 2026-08 | GitHub Actions 이식 + environment 승인 게이트 + 보안 스캔 게이트 (Trivy) |
+| 2026-08 | 컨테이너 이미지 파이프라인 (멀티스테이지 → ECR → EKS 배포 → IRSA) |
 
 ---
 
