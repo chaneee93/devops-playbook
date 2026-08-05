@@ -1,0 +1,77 @@
+# ============================================================
+# 캐시 적용 파이프라인 — 의존성 재사용으로 빌드 속도 향상
+# ============================================================
+# 💡 핵심 원칙: cache가 없어도 파이프라인은 정상 동작해야 한다
+#              (느려질 뿐, 실패하면 안 됨)
+# ============================================================
+
+stages:
+  - build
+  - test
+  - package
+
+# ── 전역 캐시 설정 ─────────────────────────────────────────
+# 파이프라인 실행 간 의존성을 재사용
+cache:
+  key: ${CI_COMMIT_REF_SLUG}        # 브랜치별로 캐시 분리 (권장)
+  # key: my-app-cache               # 또는 고정 키로 전체 공유
+  paths:
+    # [CHANGE] 프로젝트의 의존성 폴더로 교체
+    - .gradle/caches/               # Java (Gradle)
+    - .gradle/wrapper/
+    # - node_modules/               # Node.js
+    # - .m2/repository/             # Java (Maven)
+    # - vendor/                     # Go / PHP
+    # - .venv/                      # Python
+  policy: pull-push                 # 기본값. 읽기만 하면 pull로 변경
+
+# ── 빌드 ───────────────────────────────────────────────────
+build-job:
+  stage: build
+  image: gradle:8-jdk17             # [CHANGE]
+  variables:
+    GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"   # 캐시 경로를 프로젝트 내부로
+  script:
+    - echo "=== 의존성 확인 ==="
+    # 캐시 히트/미스를 로그로 확인하는 패턴
+    - |
+      if [ -d .gradle/caches ]; then
+        echo "✅ 캐시 히트 — 의존성 재사용"
+      else
+        echo "⚠️  캐시 미스 — 새로 다운로드"
+      fi
+    - echo "=== 빌드 시작 ==="
+    - ./gradlew clean build -x test        # [CHANGE]
+    - echo "빌드 완료!"
+  artifacts:
+    paths:
+      - build/libs/*.jar            # [CHANGE]
+    expire_in: 1 week
+
+# ── 테스트 ─────────────────────────────────────────────────
+test-job:
+  stage: test
+  image: gradle:8-jdk17             # [CHANGE]
+  variables:
+    GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .gradle/caches/
+    policy: pull                    # ★ 테스트는 캐시를 읽기만 함 (업로드 생략 → 빠름)
+  script:
+    - ls -al build/libs/            # artifacts 확인
+    - ./gradlew test                # [CHANGE]
+  artifacts:
+    when: always                    # 실패해도 리포트는 남김
+    reports:
+      junit: build/test-results/test/**/TEST-*.xml
+
+# ── 패키지 ─────────────────────────────────────────────────
+package-job:
+  stage: package
+  image: docker:latest
+  cache: {}                         # ★ 이 job은 캐시 불필요 → 명시적으로 비활성화
+  script:
+    - docker build -t myapp:$CI_COMMIT_SHORT_SHA .    # [CHANGE]
+    - echo "패키지 완료!"

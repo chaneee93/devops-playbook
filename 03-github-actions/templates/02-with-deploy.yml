@@ -1,0 +1,85 @@
+# ============================================================
+# 배포 워크플로 — environment 승인 게이트 + 브랜치 분기
+# ============================================================
+# 사전 설정: Settings → Environments → prod → Required reviewers 추가
+# ============================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 빌드
+        run: |
+          cp src/app.sh app            # [CHANGE]
+          chmod +x app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-binary
+          path: app                    # [CHANGE]
+          retention-days: 7
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-binary
+      - name: 테스트
+        run: sh tests/test.sh          # [CHANGE]
+
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-binary
+      - name: 패키지
+        run: chmod +x app && sh app    # [CHANGE]
+
+  # ── 개발 환경 (develop 브랜치, 자동) ──
+  deploy-dev:
+    needs: package
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: dev
+      url: http://dev.example.internal  # [CHANGE]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-binary
+      - name: dev 배포
+        run: |
+          echo "🚀 dev 배포: ${{ github.sha }}"
+          # [CHANGE] 실제 배포 명령어
+          # kubectl apply -f k8s/dev/
+          # aws ecs update-service ...
+
+  # ── 운영 환경 (main 브랜치, 승인 필수) ──
+  deploy-prod:
+    needs: package
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: prod                       # ★ Settings에서 승인자 설정 필요
+      url: http://example.com          # [CHANGE]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-binary
+      - name: prod 배포
+        run: |
+          echo "🚀 prod 배포: ${{ github.sha }}"
+          # [CHANGE] 실제 배포 명령어

@@ -1,0 +1,87 @@
+# ============================================================
+# OIDC로 AWS 접근 — 액세스 키 없이 배포
+# ============================================================
+# 사전 설정 (AWS 콘솔):
+#   1. IAM → Identity providers → Add provider
+#      - OpenID Connect
+#      - URL: https://token.actions.githubusercontent.com
+#      - Audience: sts.amazonaws.com
+#
+#   2. IAM → Roles → Create role
+#      - Web identity → 위에서 만든 provider 선택
+#      - 신뢰 정책 sub 조건 설정 (아래 참고)
+#      - 필요한 권한 정책 연결 (ECR push, S3 접근 등)
+#
+# ⚠️ sub 조건을 넓게 열면 문을 열어 둔 것과 같다!
+#   🔴 위험:     repo:ORG/*
+#   🟡 주의:     repo:ORG/REPO:*
+#   🟢 안전:     repo:ORG/REPO:ref:refs/heads/main
+#   🟢 가장 안전: repo:ORG/REPO:environment:prod
+# ============================================================
+
+name: Deploy with OIDC
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write              # ★★ 이게 없으면 OIDC 토큰을 못 받는다
+      contents: read
+    environment:
+      name: prod                   # [CHANGE] environment 이름
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── AWS 자격증명 (OIDC) ──
+      - name: AWS 자격증명 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/gha-deploy  # [CHANGE] Role ARN
+          aws-region: ap-northeast-2                                  # [CHANGE] 리전
+
+      # ── 자격증명 확인 ──
+      - name: AWS 접속 확인
+        run: aws sts get-caller-identity
+
+      # ── 배포 ──
+      - name: 배포 실행
+        run: |
+          echo "🚀 OIDC로 AWS 배포 중..."
+          # [CHANGE] 실제 배포 명령어
+          # ECR 푸시:
+          #   aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REPO
+          #   docker push $ECR_REPO:${{ github.sha }}
+          # ECS 배포:
+          #   aws ecs update-service --cluster prod --service myapp --force-new-deployment
+          # K8s 배포:
+          #   aws eks update-kubeconfig --name my-cluster
+          #   kubectl set image deployment/myapp myapp=$ECR_REPO:${{ github.sha }}
+
+# ============================================================
+# IAM Role 신뢰 정책 예시 (main 브랜치만 허용)
+# ============================================================
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [
+#     {
+#       "Effect": "Allow",
+#       "Principal": {
+#         "Federated": "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+#       },
+#       "Action": "sts:AssumeRoleWithWebIdentity",
+#       "Condition": {
+#         "StringEquals": {
+#           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+#         },
+#         "StringLike": {
+#           "token.actions.githubusercontent.com:sub": "repo:ORG/REPO:ref:refs/heads/main"
+#         }
+#       }
+#     }
+#   ]
+# }
+# ============================================================

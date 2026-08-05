@@ -1,0 +1,72 @@
+# ============================================================
+# 보안 게이트 — 시크릿 스캔 + 취약점 스캔
+# ============================================================
+# 💡 도입 전략: 처음에는 exit-code: 0으로 관찰만 하다가 단계적으로 차단
+#   1단계 (1-2주):  exit-code: 0 — 관찰만
+#   2단계 (2-4주):  신규 취약점만 차단
+#   3단계 (1-2월):  CRITICAL → HIGH 확대
+#   4단계 (상시):    HIGH 이상 전면 차단
+# ============================================================
+
+name: Security Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]            # ★ PR에서 잡는 게 가장 효과적 (Shift Left)
+
+jobs:
+  # ── 시크릿 스캔 (코드에 비밀번호/키가 있는지) ──
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0           # ★ 과거 커밋까지 전부 검사
+
+      - name: Gitleaks 시크릿 스캔
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  # ── 의존성 + IaC 취약점 스캔 ──
+  vulnerability-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 파일시스템 스캔 (소스코드 + 의존성)
+      - name: Trivy 파일시스템 스캔
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: '.'
+          severity: HIGH,CRITICAL  # [CHANGE] 초기엔 CRITICAL만으로 시작 권장
+          exit-code: '1'           # ★ 발견 시 파이프라인 실패
+          ignore-unfixed: true     # 패치 없는 건 무시
+
+      # IaC 스캔 (Terraform, K8s YAML)
+      - name: Trivy IaC 스캔
+        uses: aquasecurity/trivy-action@master
+        if: hashFiles('terraform/**') != '' || hashFiles('k8s/**') != ''
+        with:
+          scan-type: config
+          scan-ref: '.'            # [CHANGE] IaC 파일 경로
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+# ============================================================
+# 확장: Docker 이미지 스캔 (빌드 후)
+# ============================================================
+#   image-scan:
+#     needs: build
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Trivy 이미지 스캔
+#         uses: aquasecurity/trivy-action@master
+#         with:
+#           image-ref: myapp:${{ github.sha }}
+#           severity: HIGH,CRITICAL
+#           exit-code: '1'
+# ============================================================

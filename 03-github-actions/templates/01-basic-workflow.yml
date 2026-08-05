@@ -1,0 +1,76 @@
+# ============================================================
+# GitHub Actions 기본 워크플로 — build → test → package
+# ============================================================
+# 🔧 수정 포인트: [CHANGE] 표시된 부분만 프로젝트에 맞게 변경
+# ============================================================
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]     # [CHANGE] 트리거할 브랜치
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # ── 빌드 ──
+  build:
+    runs-on: ubuntu-latest          # [CHANGE] 필요시 self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      # [CHANGE] 언어별 셋업
+      # Java:   uses: actions/setup-java@v4
+      #         with: { java-version: '17', distribution: 'temurin' }
+      # Node:   uses: actions/setup-node@v4
+      #         with: { node-version: '20' }
+
+      - name: 빌드
+        run: |
+          echo "빌드 시작..."
+          # [CHANGE] 실제 빌드 명령어
+          # Java:   ./gradlew clean build -x test
+          # Node:   npm ci && npm run build
+          # Go:     go build -o app ./cmd/main.go
+          cp src/app.sh app
+          chmod +x app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-binary
+          path: app                 # [CHANGE] 빌드 산출물 경로
+          retention-days: 7
+
+  # ── 테스트 ──
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-binary
+
+      - name: 테스트
+        run: |
+          # [CHANGE] 실제 테스트 명령어
+          # Java:   ./gradlew test
+          # Node:   npm test
+          # Go:     go test ./...
+          sh tests/test.sh
+
+  # ── 패키지 ──
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-binary
+
+      - name: 패키지
+        run: |
+          # [CHANGE] Docker 이미지 빌드 등
+          # docker build -t myapp:${{ github.sha }} .
+          chmod +x app && sh app

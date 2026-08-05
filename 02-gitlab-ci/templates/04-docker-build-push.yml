@@ -1,0 +1,101 @@
+# ============================================================
+# Docker 이미지 빌드 + 레지스트리 푸시
+# ============================================================
+# GitLab Container Registry / Docker Hub / AWS ECR 대응
+# ============================================================
+
+stages:
+  - build
+  - test
+  - package
+  - deploy
+
+variables:
+  # GitLab Container Registry 사용 시 (자동 제공되는 변수)
+  IMAGE_NAME: $CI_REGISTRY_IMAGE
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA   # 커밋 해시를 태그로 (추적 가능)
+  # [CHANGE] Docker Hub 사용 시
+  # IMAGE_NAME: docker.io/myusername/myapp
+  # [CHANGE] AWS ECR 사용 시
+  # IMAGE_NAME: 123456789.dkr.ecr.ap-northeast-2.amazonaws.com/myapp
+
+# ── 애플리케이션 빌드 ──────────────────────────────────────
+build-job:
+  stage: build
+  image: gradle:8-jdk17             # [CHANGE]
+  script:
+    - ./gradlew clean build -x test # [CHANGE]
+  artifacts:
+    paths:
+      - build/libs/*.jar            # [CHANGE]
+    expire_in: 1 day
+
+# ── 테스트 ─────────────────────────────────────────────────
+test-job:
+  stage: test
+  image: gradle:8-jdk17             # [CHANGE]
+  needs: [build-job]
+  script:
+    - ./gradlew test                # [CHANGE]
+  artifacts:
+    when: always
+    reports:
+      junit: build/test-results/test/**/TEST-*.xml
+
+# ── Docker 이미지 빌드 & 푸시 ──────────────────────────────
+docker-build-push:
+  stage: package
+  image: docker:latest
+  services:
+    - docker:dind                   # Docker-in-Docker 서비스
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"    # DinD TLS 설정 (보안)
+  before_script:
+    # ── GitLab Container Registry 로그인 (변수 자동 제공) ──
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    # ── [CHANGE] Docker Hub 사용 시 ──
+    # - echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+    # ── [CHANGE] AWS ECR 사용 시 ──
+    # - apk add --no-cache aws-cli
+    # - aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $IMAGE_NAME
+  script:
+    - echo "이미지 빌드 중: $IMAGE_NAME:$IMAGE_TAG"
+    - docker build -t $IMAGE_NAME:$IMAGE_TAG -t $IMAGE_NAME:latest .
+    - docker push $IMAGE_NAME:$IMAGE_TAG
+    - docker push $IMAGE_NAME:latest
+    - echo "푸시 완료!"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+# ── 배포 ───────────────────────────────────────────────────
+deploy-prod:
+  stage: deploy
+  image: bitnami/kubectl:latest     # [CHANGE] 배포 도구에 맞게
+  environment:
+    name: production
+    url: https://example.com        # [CHANGE]
+  script:
+    # [CHANGE] 실제 배포 명령어
+    - kubectl set image deployment/myapp myapp=$IMAGE_NAME:$IMAGE_TAG
+    - kubectl rollout status deployment/myapp
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+
+# ============================================================
+# 사전 준비: CI/CD Variables 등록
+# ============================================================
+# GitLab UI → Settings → CI/CD → Variables 에서 등록
+#
+#   DOCKERHUB_USER      (Docker Hub 사용 시)
+#   DOCKERHUB_TOKEN     (Masked ✅, Protected ✅)
+#   AWS_ACCESS_KEY_ID   (ECR 사용 시)
+#   AWS_SECRET_ACCESS_KEY (Masked ✅, Protected ✅)
+#
+# ⚠️ 비밀번호/토큰은 반드시 Masked 체크 (로그에 노출 방지)
+# ⚠️ 운영 인증정보는 Protected 체크 (보호 브랜치에서만 사용)
+#
+# GitLab Container Registry는 아래 변수가 자동 제공됨:
+#   $CI_REGISTRY, $CI_REGISTRY_USER, $CI_REGISTRY_PASSWORD, $CI_REGISTRY_IMAGE
+# ============================================================

@@ -1,0 +1,66 @@
+# ============================================================
+# 기본 파이프라인 템플릿 — build → test → package
+# ============================================================
+# 🔧 수정 포인트: [CHANGE] 표시된 부분만 프로젝트에 맞게 변경
+# ============================================================
+
+stages:
+  - build
+  - test
+  - package
+
+# ── 1단계: 빌드 ────────────────────────────────────────────
+# 소스코드를 실행 가능한 형태로 변환
+build-job:
+  stage: build
+  image: alpine:latest              # [CHANGE] Java면 gradle:8-jdk17, Node면 node:20
+  script:
+    - echo "빌드 시작..."
+    # [CHANGE] 실제 빌드 명령어로 교체
+    # Java   : ./gradlew clean build -x test
+    # Node   : npm ci && npm run build
+    # Go     : go build -o app ./cmd/main.go
+    # Python : pip install -r requirements.txt
+    - cp src/app.sh app
+    - chmod +x app
+    - echo "빌드 완료!"
+  artifacts:
+    paths:
+      - app                         # [CHANGE] 빌드 산출물 경로
+      # Java : build/libs/*.jar
+      # Node : dist/
+      # Go   : app
+    expire_in: 1 week               # 명시 안 하면 기본 30일 (디스크 주의)
+
+# ── 2단계: 테스트 ──────────────────────────────────────────
+# 기능이 의도대로 동작하는지 검증
+# ⚠️ 여기서 실패하면 package는 실행되지 않음 (이것이 파이프라인의 핵심)
+test-job:
+  stage: test
+  image: alpine:latest              # [CHANGE]
+  script:
+    - echo "테스트 시작..."
+    - ls -la app                    # artifacts로 받은 산출물 확인
+    # [CHANGE] 실제 테스트 명령어로 교체
+    # Java   : ./gradlew test
+    # Node   : npm test
+    # Go     : go test ./...
+    # Python : pytest
+    - sh tests/test.sh
+    - echo "테스트 완료!"
+  artifacts:
+    when: always                    # ★ 실패해도 테스트 리포트는 남긴다
+    reports:
+      junit: build/test-results/test/**/TEST-*.xml   # [CHANGE] 리포트 경로
+
+# ── 3단계: 패키지 ──────────────────────────────────────────
+# 배포 가능한 형태로 포장 (보통 Docker 이미지)
+package-job:
+  stage: package
+  image: alpine:latest              # [CHANGE] Docker 빌드 시 docker:latest
+  script:
+    - echo "패키지 시작..."
+    # [CHANGE] 실제 패키징 명령어
+    # Docker : docker build -t myapp:$CI_COMMIT_SHORT_SHA .
+    - sh app
+    - echo "패키지 완료!"

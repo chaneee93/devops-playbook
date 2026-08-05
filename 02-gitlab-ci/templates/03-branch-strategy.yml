@@ -1,0 +1,112 @@
+# ============================================================
+# 브랜치 전략 파이프라인 — 환경별 배포 분기
+# ============================================================
+# 브랜치 ↔ 환경 매핑
+#   feature/*  → build + test 만 (배포 없음)
+#   develop    → dev 환경 자동 배포
+#   release/*  → staging 환경 배포
+#   main       → production 배포 (수동 승인 필수)
+# ============================================================
+
+stages:
+  - build
+  - test
+  - package
+  - deploy
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .gradle/caches/               # [CHANGE]
+
+# ── 빌드 ───────────────────────────────────────────────────
+build-job:
+  stage: build
+  image: alpine:latest              # [CHANGE]
+  script:
+    - echo "빌드 중..."
+    - cp src/app.sh app             # [CHANGE]
+    - chmod +x app
+  artifacts:
+    paths:
+      - app                         # [CHANGE]
+    expire_in: 1 week
+
+# ── 테스트 (needs로 DAG 구성) ──────────────────────────────
+# needs를 쓰면 stage 경계를 넘어 의존 job이 끝나는 즉시 시작
+test-job:
+  stage: test
+  image: alpine:latest
+  needs:
+    - build-job                     # ★ build-job만 끝나면 바로 시작
+  script:
+    - sh tests/test.sh              # [CHANGE]
+
+# ── 패키지 ─────────────────────────────────────────────────
+package-job:
+  stage: package
+  image: alpine:latest
+  script:
+    - echo "패키지 중..."
+    - sh app                        # [CHANGE]
+
+# ============================================================
+# 배포 — 브랜치별 분기
+# ============================================================
+
+# ── 개발 환경 (develop 브랜치 → 자동 배포) ─────────────────
+deploy-dev:
+  stage: deploy
+  image: alpine:latest
+  environment:
+    name: development
+    url: https://dev.example.com    # [CHANGE]
+  script:
+    - echo "🚀 개발 서버 배포 중..."
+    # [CHANGE] 실제 배포 명령어
+    # - kubectl apply -f k8s/dev/
+    # - aws ecs update-service --cluster dev --service myapp --force-new-deployment
+    - sh app
+    - echo "dev 배포 완료!"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+# ── 스테이징 (release/* 브랜치 → 자동 배포) ────────────────
+deploy-staging:
+  stage: deploy
+  image: alpine:latest
+  environment:
+    name: staging
+    url: https://stg.example.com    # [CHANGE]
+  script:
+    - echo "🚀 스테이징 배포 중..."
+    - sh app                        # [CHANGE]
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /^release\/.*$/
+
+# ── 운영 환경 (main 브랜치 → 수동 승인 필수) ───────────────
+deploy-prod:
+  stage: deploy
+  image: alpine:latest
+  environment:
+    name: production
+    url: https://example.com        # [CHANGE]
+  script:
+    - echo "🚀 운영 서버 배포 중..."
+    - sh app                        # [CHANGE]
+    - echo "prod 배포 완료!"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual                  # ★ 사람이 버튼을 눌러야 실행
+      allow_failure: false          # 배포 실패 시 파이프라인도 실패 처리
+
+# ============================================================
+# rules 문법 참고
+# ============================================================
+#   if: $CI_COMMIT_BRANCH == "main"              특정 브랜치
+#   if: $CI_COMMIT_BRANCH =~ /^feature\/.*$/     정규식 매칭
+#   if: $CI_PIPELINE_SOURCE == "merge_request_event"   MR에서만
+#   if: $CI_COMMIT_TAG                           태그가 있을 때만
+#   when: manual / always / on_success / on_failure / never
+#   changes: [src/**/*]                          특정 파일 변경 시에만
+# ============================================================
