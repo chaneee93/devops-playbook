@@ -15,9 +15,10 @@
 | [02. GitLab CI](./02-gitlab-ci/) | 파이프라인 구축, Runner, artifacts/cache | ✅ |
 | [03. GitHub Actions](./03-github-actions/) | Actions 이식, OIDC, 보안 게이트 | ✅ |
 | [04. 컨테이너 / EKS](./04-container-eks/) | 멀티스테이지, ECR, EKS, IRSA | ✅ |
-| [05. Terraform](./05-terraform/) | IaC, 모듈화, 환경 분리 | 🚧 |
-| [06. Kubernetes](./06-kubernetes/) | 클러스터 구성, 매니페스트 | 🚧 |
-| [07. AWS](./07-aws/) | 클라우드 인프라 설계 | 🚧 |
+| [05. K8s 배포 심화](./05-k8s-deploy/) | Probe, Kustomize, Helm | ✅ |
+| [06. Terraform](./06-terraform/) | IaC, 모듈화, 환경 분리 | 🚧 |
+| [07. Kubernetes](./07-kubernetes/) | 클러스터 구성, 매니페스트 | 🚧 |
+| [08. AWS](./08-aws/) | 클라우드 인프라 설계 | 🚧 |
 
 ---
 
@@ -59,6 +60,17 @@
     ├── deployment.yaml            # EKS Deployment + IRSA
     └── service.yaml               # ClusterIP Service
 
+### K8s 배포 심화 템플릿
+
+    05-k8s-deploy/templates/
+    ├── kustomize/
+    │   ├── base/                  # 공통 원본 (deployment + service)
+    │   └── overlays/              # dev / prod 환경별 차이
+    └── helm/
+        ├── values.yaml            # 기본값
+        ├── values-dev.yaml        # dev 환경
+        └── values-prod.yaml       # prod 환경
+
 ---
 
 ## 🔨 프로젝트 (직접 구축한 것)
@@ -68,6 +80,7 @@
 | [notes-app-cicd](./projects/notes-app-cicd/) | GitLab Server+Runner를 Docker로 구축, CI 파이프라인 구현 |
 | [notes-app-actions](./projects/notes-app-actions/) | GitHub Actions로 이식, environment 승인 게이트 + 보안 스캔 |
 | [notes-app-eks](./projects/notes-app-eks/) | 멀티스테이지 빌드 → ECR push → EKS 배포 → IRSA |
+| [notes-app-k8s-deploy](./projects/notes-app-k8s-deploy/) | 무중단 배포 + Kustomize/Helm 환경분리 |
 
 ---
 
@@ -78,6 +91,7 @@
 | 2026-08 | GitLab CI 파이프라인 구축 (Runner 등록 → 파이프라인 → 브랜치 전략) |
 | 2026-08 | GitHub Actions 이식 + environment 승인 게이트 + 보안 스캔 게이트 (Trivy) |
 | 2026-08 | 컨테이너 이미지 파이프라인 (멀티스테이지 → ECR → EKS 배포 → IRSA) |
+| 2026-08 | K8s 배포 심화 (무중단 4요소 + Kustomize 환경분리 + Helm 차트) |
 
 ---
 
