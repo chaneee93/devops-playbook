@@ -1,0 +1,16 @@
+# 기본값 — 환경별로 -f values-xxx.yaml 로 덮어씌움
+replicaCount: 1
+image:
+  repository: <ECR_주소>/notes-app    # [CHANGE]
+  tag: "v1.0"
+  pullPolicy: IfNotPresent
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits: { cpu: 250m, memory: 256Mi }
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+probes:
+  enabled: true
+  path: /health

@@ -1,0 +1,40 @@
+# base — 모든 환경의 공통 원본
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-app                    # [CHANGE] 앱 이름
+spec:
+  replicas: 1                        # overlay에서 환경별로 변경
+  selector:
+    matchLabels:
+      app: notes-app
+  template:
+    metadata:
+      labels:
+        app: notes-app
+    spec:
+      terminationGracePeriodSeconds: 45
+      containers:
+        - name: notes-app
+          image: IMAGE_PLACEHOLDER   # overlay의 images에서 교체
+          ports:
+            - containerPort: 8080
+          startupProbe:
+            httpGet: { path: /health, port: 8080 }
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 250m, memory: 256Mi }
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]

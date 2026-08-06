@@ -1,0 +1,13 @@
+# prod 리소스 패치 — cpu/memory 상향
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-app
+spec:
+  template:
+    spec:
+      containers:
+        - name: notes-app
+          resources:
+            requests: { cpu: 500m, memory: 256Mi }
+            limits: { cpu: "1", memory: 512Mi }

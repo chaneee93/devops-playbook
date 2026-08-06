@@ -1,0 +1,7 @@
+# prod 환경 — 고스펙
+replicaCount: 4
+image:
+  tag: "v1.0"
+resources:
+  requests: { cpu: 500m, memory: 256Mi }
+  limits: { cpu: "1", memory: 512Mi }

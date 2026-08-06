@@ -1,0 +1,16 @@
+# prod overlay — 고스펙
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: notes-prod                # [CHANGE]
+namePrefix: prod-
+resources:
+  - ../../base
+replicas:
+  - name: notes-app
+    count: 4                         # [CHANGE] 환경에 맞게
+images:
+  - name: IMAGE_PLACEHOLDER
+    newName: <ECR_주소>/notes-app     # [CHANGE]
+    newTag: v1.0
+patches:
+  - path: patch-resources.yaml
