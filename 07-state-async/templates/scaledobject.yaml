@@ -1,0 +1,21 @@
+# KEDA ScaledObject — SQS 큐 길이로 워커 자동 스케일
+# [CHANGE] queueURL, scaleTargetRef.name
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: notes-worker-scaler            # [CHANGE]
+  namespace: student16                 # [CHANGE]
+spec:
+  scaleTargetRef:
+    name: notes-worker                 # [CHANGE] 스케일할 Deployment
+  minReplicaCount: 0                   # 큐 비면 0개 (비용 0!)
+  maxReplicaCount: 10                  # [CHANGE] 최대
+  cooldownPeriod: 30                   # 큐 비고 30초 후 축소
+  pollingInterval: 10                  # 10초마다 확인
+  triggers:
+    - type: aws-sqs-queue
+      metadata:
+        queueURL: https://sqs.eu-west-3.amazonaws.com/834922934330/notes-tasks  # [CHANGE]
+        queueLength: "5"               # 메시지 5개당 Pod 1개
+        awsRegion: eu-west-3           # [CHANGE]
+        identityOwner: operator        # KEDA operator의 IRSA 사용
