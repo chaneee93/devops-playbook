@@ -18,9 +18,10 @@
 | [05. K8s 배포 심화](./05-k8s-deploy/) | Probe, Kustomize, Helm | ✅ |
 | [06. 설정과 비밀](./06-secrets-eso/) | Parameter Store, Secrets Manager, ESO | ✅ |
 | [07. 상태와 비동기](./07-state-async/) | ElastiCache, SQS, SNS, KEDA | ✅ |
-| [08. Terraform](./08-terraform/) | IaC, 모듈화, 환경 분리 | 🚧 |
-| [09. Kubernetes](./09-kubernetes/) | 클러스터 구성, 매니페스트 | 🚧 |
-| [10. AWS](./10-aws/) | 클라우드 인프라 설계 | 🚧 |
+| [08. GitOps](./08-gitops/) | 드리프트, Pull vs Push, 저장소 분리 | ✅ |
+| [09. Terraform](./09-terraform/) | IaC, 모듈화, 환경 분리 | 🚧 |
+| [10. Kubernetes](./10-kubernetes/) | 클러스터 구성, 매니페스트 | 🚧 |
+| [11. AWS](./11-aws/) | 클라우드 인프라 설계 | 🚧 |
 
 ---
 
@@ -80,6 +81,12 @@
     ├── scaledobject.yaml          # SQS 큐 길이 기반 오토스케일
     └── worker-deployment.yaml     # SQS 워커 Deployment
 
+### GitOps 매니페스트 저장소
+
+    notes-manifests (별도 리포)
+    ├── base/                      # 공통 원본 (Probe + ESO)
+    └── overlays/dev|stg|prod/     # 환경별 차이만
+
 ---
 
 ## 🔨 프로젝트 (직접 구축한 것)
@@ -92,6 +99,7 @@
 | [notes-app-k8s-deploy](./projects/notes-app-k8s-deploy/) | 무중단 배포 + Kustomize/Helm 환경분리 |
 | [notes-app-secrets](./projects/notes-app-secrets/) | ESO로 Git에 비밀 0줄 달성 |
 | [notes-app-async](./projects/notes-app-async/) | ElastiCache + SQS/SNS + KEDA 자동 스케일 |
+| [notes-manifests](./projects/notes-manifests/) | GitOps 매니페스트 저장소 (base + overlays) |
 
 ---
 
@@ -105,6 +113,7 @@
 | 2026-08 | K8s 배포 심화 (무중단 4요소 + Kustomize 환경분리 + Helm 차트) |
 | 2026-08 | 설정과 비밀 (Parameter Store + Secrets Manager + ESO → Git에 비밀 0줄) |
 | 2026-08 | 상태와 비동기 (ElastiCache + SQS/SNS + KEDA → Pod 0~N 자동 스케일) |
+| 2026-08 | GitOps 이해 및 전략 (4원칙, Pull vs Push, 저장소 분리, 매니페스트 리포 구축) |
 
 ---
 
