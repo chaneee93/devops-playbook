@@ -16,9 +16,10 @@
 | [03. GitHub Actions](./03-github-actions/) | Actions 이식, OIDC, 보안 게이트 | ✅ |
 | [04. 컨테이너 / EKS](./04-container-eks/) | 멀티스테이지, ECR, EKS, IRSA | ✅ |
 | [05. K8s 배포 심화](./05-k8s-deploy/) | Probe, Kustomize, Helm | ✅ |
-| [06. Terraform](./06-terraform/) | IaC, 모듈화, 환경 분리 | 🚧 |
-| [07. Kubernetes](./07-kubernetes/) | 클러스터 구성, 매니페스트 | 🚧 |
-| [08. AWS](./08-aws/) | 클라우드 인프라 설계 | 🚧 |
+| [06. 설정과 비밀](./06-secrets-eso/) | Parameter Store, Secrets Manager, ESO | ✅ |
+| [07. Terraform](./07-terraform/) | IaC, 모듈화, 환경 분리 | 🚧 |
+| [08. Kubernetes](./08-kubernetes/) | 클러스터 구성, 매니페스트 | 🚧 |
+| [09. AWS](./09-aws/) | 클라우드 인프라 설계 | 🚧 |
 
 ---
 
@@ -63,13 +64,14 @@
 ### K8s 배포 심화 템플릿
 
     05-k8s-deploy/templates/
-    ├── kustomize/
-    │   ├── base/                  # 공통 원본 (deployment + service)
-    │   └── overlays/              # dev / prod 환경별 차이
-    └── helm/
-        ├── values.yaml            # 기본값
-        ├── values-dev.yaml        # dev 환경
-        └── values-prod.yaml       # prod 환경
+    ├── kustomize/                 # base + overlays (dev/prod)
+    └── helm/                      # values 분리 (dev/prod)
+
+### ESO 템플릿
+
+    06-secrets-eso/templates/
+    ├── secretstore.yaml           # AWS SM 연결 (IRSA 인증)
+    └── externalsecret.yaml        # 비밀 참조 → K8s Secret 자동 생성
 
 ---
 
@@ -81,6 +83,7 @@
 | [notes-app-actions](./projects/notes-app-actions/) | GitHub Actions로 이식, environment 승인 게이트 + 보안 스캔 |
 | [notes-app-eks](./projects/notes-app-eks/) | 멀티스테이지 빌드 → ECR push → EKS 배포 → IRSA |
 | [notes-app-k8s-deploy](./projects/notes-app-k8s-deploy/) | 무중단 배포 + Kustomize/Helm 환경분리 |
+| [notes-app-secrets](./projects/notes-app-secrets/) | ESO로 Git에 비밀 0줄 달성 |
 
 ---
 
@@ -92,6 +95,7 @@
 | 2026-08 | GitHub Actions 이식 + environment 승인 게이트 + 보안 스캔 게이트 (Trivy) |
 | 2026-08 | 컨테이너 이미지 파이프라인 (멀티스테이지 → ECR → EKS 배포 → IRSA) |
 | 2026-08 | K8s 배포 심화 (무중단 4요소 + Kustomize 환경분리 + Helm 차트) |
+| 2026-08 | 설정과 비밀 (Parameter Store + Secrets Manager + ESO → Git에 비밀 0줄) |
 
 ---
 
